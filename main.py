@@ -7,7 +7,7 @@ from tkinter import *
 
 
 def open_link(event):
-   webbrowser.open(event.widget.tag_names(CURRENT)[1])
+    webbrowser.open(event.widget.tag_names(CURRENT)[1])
 
 
 SRC_LANG = "fr"  # can use auto for auto-detect
@@ -31,10 +31,11 @@ this_gt_url = GTRANS_REAL_URL.format(SRC_LANG, DEST_LANG, selected_text)
 W_HEIGHT = ceil(len(selected_text)/CHARS_PER_LINE) + ceil(len(translated_text)/CHARS_PER_LINE) + 11
 
 root = Tk()
+root.title('Translation Result')
 S = Scrollbar(root)
 T = Text(root, height=W_HEIGHT, width=CHARS_PER_LINE, wrap=WORD)
 
-T.tag_configure('header', font=('Times New Roman', 12))
+T.tag_configure('header', font=('Times New Roman', 12, 'italic'))
 T.tag_configure('text', font=('Times New Roman', 12, 'bold'))
 T.tag_configure('footer', font=('Times New Roman', 9))
 T.tag_configure('footer_link', foreground="blue", font=('Times New Roman', 9, 'underline'))
