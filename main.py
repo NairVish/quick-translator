@@ -1,27 +1,51 @@
 import subprocess
 import requests
-
-import tkinter as tk
-from tkinterhtml import HtmlFrame
+import webbrowser
 from googletrans import Translator
+from tkinter import *
+
+
+def open_link(event):
+   webbrowser.open(event.widget.tag_names(CURRENT)[1])
+
+
+SRC_LANG = "fr"  # can use auto for auto-detect
+DEST_LANG = "en" # keep as default lang
 
 bulk_text_translation_html = """
-<p style="font-size: 24px; font-weight: bold;">%s</p>
+<p style="font-size: 24px; font-weight: bold;">{}</p>
 <hr>
-<p style="font-size: 24px; font-style: oblique;">%s</p>
+<p style="font-size: 24px; font-style: oblique;">{}</p>
+<p>Translation from Google Translate. <a href="{}">View online.</a></p>
 """
+GTRANS_REAL_URL = "https://translate.google.com/#view=home&op=translate&sl={}&tl={}&text={}"
 
 selected_text = subprocess.check_output(["xsel", "-o"]).decode().strip()
 
 translator = Translator()
-t = translator.translate(selected_text, src="fr", dest='en').text
+translated_text = translator.translate(selected_text, src=SRC_LANG, dest=DEST_LANG).text
+# subprocess.call(['notify-send', "-i", "system-search", selected_text, translated_text])
+this_gt_url = GTRANS_REAL_URL.format(SRC_LANG, DEST_LANG, selected_text)
 
-# subprocess.call(['notify-send', "-i", "system-search", selected_text, t])
+root = Tk()
+S = Scrollbar(root)
+T = Text(root, height=30, width=75, wrap=WORD)
 
-root = tk.Tk()
+T.tag_configure('header', font=('Times New Roman', 12))
+T.tag_configure('text', font=('Times New Roman', 12, 'bold'))
+T.tag_configure('footer', font=('Times New Roman', 9))
+T.tag_configure('footer_link', foreground="blue", font=('Times New Roman', 9, 'underline'))
+T.tag_bind('footer_link', '<Button-1>', open_link)
 
-frame = HtmlFrame(root, vertical_scrollbar="auto")
-frame.set_content(bulk_text_translation_html % (selected_text, t))
+T.insert(END, "Source ({}):\n\n".format(SRC_LANG), 'header')
+T.insert(END, "{}".format(selected_text), 'text')
+T.insert(END, "\n\n{}\n\n".format('-'*75))
+T.insert(END, "Translated ({}):\n\n".format(DEST_LANG), 'header')
+T.insert(END, "{}".format(translated_text), 'text')
 
-frame.pack()
-root.mainloop()
+T.insert(END, "\n\nTranslation by Google Translate. ", 'footer')
+T.insert(END, "View online.", ('footer_link', this_gt_url))
+
+S.pack(side=RIGHT, fill=Y)
+T.pack(side=LEFT, fill=Y)
+mainloop()
