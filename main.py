@@ -1,3 +1,4 @@
+import re
 import html
 import subprocess
 import requests
@@ -9,6 +10,16 @@ import pycountry
 
 from googletrans import Translator
 from tkinter import *
+
+
+def clean_text(raw_str):
+    """
+    Cleans all normal HTML and bracket tags.
+    :param raw_html: The input string that needs to be cleaned.
+    :return: The cleaned string.
+    """
+    cleaner_regex = re.compile('(<.*?>|\[.*?\])')
+    return re.sub(cleaner_regex, '', raw_str)
 
 
 def open_link(event):
@@ -145,7 +156,7 @@ else:   # if this is a dictionary lookup result...
             all_meanings = []
 
         for m in all_meanings:
-            T.insert(END, "\t* {} [{}]\n".format(html.unescape(m["text"]), m["language"]), 'phrase_meaning')
+            T.insert(END, "\t* {} [{}]\n".format(clean_text(html.unescape(m["text"])), m["language"]), 'phrase_meaning')
 
         T.insert(END, "\tSource(s): ", 'phrase_meaning_source')
         for a in d["authors"]:
