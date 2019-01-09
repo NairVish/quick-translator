@@ -35,6 +35,7 @@ try:
 except AttributeError:
     subprocess.call(['notify-send', "-i", "system-search", "Invalid source or destination language?",
                      "The desired source or destination language is invalid! [S: {}; D: {}]".format(SRC_LANG, DEST_LANG)])
+    sys.exit(0)
 
 if SRC_LANG == DEST_LANG:
     subprocess.call(['notify-send', "-i", "system-search", "Nothing to translate!", "The source and destination languages are the same! [{}]".format(SRC_LANG)])
