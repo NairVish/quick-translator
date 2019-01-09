@@ -1,3 +1,4 @@
+import html
 import subprocess
 import requests
 import webbrowser
@@ -112,7 +113,7 @@ else:
 
     for d in defs:
         try:
-            phrase = d["phrase"]["text"]
+            phrase = html.unescape(d["phrase"]["text"])
         except KeyError:
             phrase = "---"
 
@@ -123,7 +124,7 @@ else:
             all_meanings = []
 
         for m in all_meanings:
-            T.insert(END, "\t* {} [{}]\n".format(m["text"], m["language"]), 'phrase_meaning')
+            T.insert(END, "\t* {} [{}]\n".format(html.unescape(m["text"]), m["language"]), 'phrase_meaning')
 
         T.insert(END, "\tSource(s): ", 'phrase_meaning_source')
         for a in d["authors"]:
