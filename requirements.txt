@@ -1,3 +1,4 @@
 googletrans
 requests
+pycountry
 # tkinter  # installation varies by OS/distribution
