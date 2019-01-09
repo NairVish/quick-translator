@@ -14,6 +14,10 @@ def open_link(event):
     webbrowser.open(event.widget.tag_names(CURRENT)[1])
 
 
+def close(event):
+    sys.exit(0)
+
+
 SRC_LANG = "auto"  # can use auto for auto-detect
 DEST_LANG = "en" # keep as default lang
 
@@ -37,10 +41,6 @@ except AttributeError:
                      "The desired source or destination language is invalid! [S: {}; D: {}]".format(SRC_LANG, DEST_LANG)])
     sys.exit(0)
 
-if SRC_LANG == DEST_LANG:
-    subprocess.call(['notify-send', "-i", "system-search", "Nothing to translate!", "The source and destination languages are the same! [{}]".format(SRC_LANG)])
-    sys.exit(0)
-
 this_glosbe_api_url = GLOSBE_API_URL.format(ISO6393_src_lang, ISO6393_dest_lang, selected_text)
 this_glosbe_url = GLOSBE_REAL_URL.format(SRC_LANG, DEST_LANG, selected_text)
 this_gt_url = GTRANS_REAL_URL.format(SRC_LANG, DEST_LANG, selected_text)
@@ -53,6 +53,11 @@ if len(selected_text.split(" ")) < 5:
     except KeyError:
         pass  # keep RESULT_IS_DICT_LOOKUP as False
 
+if SRC_LANG == DEST_LANG and not RESULT_IS_DICT_LOOKUP:
+    subprocess.call(['notify-send', "-i", "system-search", "No dictionary lookup results and nothing to translate!",
+                     "The source and destination languages are the same. [{}]".format(SRC_LANG)])
+    sys.exit(0)
+
 if RESULT_IS_DICT_LOOKUP:
     rd = requests.get(this_glosbe_api_url).json()
     W_HEIGHT = 30
@@ -62,6 +67,7 @@ else:
 
 root = Tk()
 root.title('Translation Result' if not RESULT_IS_DICT_LOOKUP else "Lookup Result")
+root.bind('<Escape>', close)
 S = Scrollbar(root)
 S.pack(side=RIGHT, fill=Y)
 T = Text(root, height=W_HEIGHT, width=CHARS_PER_LINE, wrap=WORD)
