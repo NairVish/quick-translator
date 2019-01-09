@@ -1,8 +1,11 @@
 import subprocess
 import requests
 import webbrowser
+
 from math import ceil
+
 import pycountry
+
 from googletrans import Translator
 from tkinter import *
 
@@ -13,6 +16,7 @@ def open_link(event):
 
 SRC_LANG = "auto"  # can use auto for auto-detect
 DEST_LANG = "en" # keep as default lang
+
 CHARS_PER_LINE = 75
 RESULT_IS_DICT_LOOKUP = False
 GTRANS_REAL_URL = "https://translate.google.com/#view=home&op=translate&sl={}&tl={}&text={}"
@@ -48,54 +52,57 @@ if RESULT_IS_DICT_LOOKUP:
     W_HEIGHT = 30
 else:
     translated_text = translator.translate(selected_text, src=SRC_LANG, dest=DEST_LANG).text
-    W_HEIGHT = ceil(len(selected_text) / CHARS_PER_LINE) + ceil(len(translated_text) / CHARS_PER_LINE) + 11
+    W_HEIGHT = ceil(len(selected_text) / CHARS_PER_LINE) + ceil(len(translated_text) / CHARS_PER_LINE) + 12
 
 root = Tk()
 root.title('Translation Result' if not RESULT_IS_DICT_LOOKUP else "Lookup Result")
 S = Scrollbar(root)
+S.pack(side=RIGHT, fill=Y)
 T = Text(root, height=W_HEIGHT, width=CHARS_PER_LINE, wrap=WORD)
 
-if not RESULT_IS_DICT_LOOKUP:
-    T.tag_configure('header', font=('Times New Roman', 12, 'italic'))
-    T.tag_configure('text', font=('Times New Roman', 12, 'bold'))
-    T.tag_configure('footer', font=('Times New Roman', 9))
-    T.tag_configure('footer_link', foreground="blue", font=('Times New Roman', 9, 'underline'))
-    T.tag_bind('footer_link', '<Button-1>', open_link)
+T.tag_configure('main_header', font=('Times New Roman', 14, 'bold'))
+T.tag_configure('footer', font=('Times New Roman', 9))
+T.tag_configure('footer_link', foreground="blue", font=('Times New Roman', 9, 'underline'))
+T.tag_bind('footer_link', '<Button-1>', open_link)
+T.tag_configure('header_cont', font=('Times New Roman', 12))
 
-    T.insert(END, "Source ({}):\n\n".format(SRC_LANG), 'header')
+if not RESULT_IS_DICT_LOOKUP:
+    T.tag_configure('sect_header', font=('Times New Roman', 12, 'italic'))
+    T.tag_configure('text', font=('Times New Roman', 12, 'bold'))
+
+    T.insert(END, "Text translation results ({} to {})\n".format(SRC_LANG.upper(), DEST_LANG.upper()), 'main_header')
+    T.insert(END, "Translation by Google Translate. ", 'footer')
+    T.insert(END, "View online.", ('footer_link', this_gt_url))
+    T.insert(END, "\n\n")
+
+    T.insert(END, "Source ({}):\n\n".format(SRC_LANG), 'sect_header')
     T.insert(END, "{}".format(selected_text), 'text')
     T.insert(END, "\n\n{}\n\n".format('-'*CHARS_PER_LINE))
-    T.insert(END, "Translation ({}):\n\n".format(DEST_LANG), 'header')
+    T.insert(END, "Translation ({}):\n\n".format(DEST_LANG), 'sect_header')
     T.insert(END, "{}".format(translated_text), 'text')
 
-    T.insert(END, "\n\nTranslation by Google Translate. ", 'footer')
-    T.insert(END, "View online.", ('footer_link', this_gt_url))
 else:
-    T.tag_configure('header', font=('Times New Roman', 14, 'bold'))
-    T.tag_configure('header_cont', font=('Times New Roman', 12))
     T.tag_configure('phrase_main', font=('Times New Roman', 12, 'italic'))
     T.tag_configure('phrase_meaning', font=('Times New Roman', 11))
     T.tag_configure('phrase_meaning_source', font=('Times New Roman', 8))
     T.tag_configure('phrase_meaning_source_link', foreground="blue", font=('Times New Roman', 8, 'underline'))
 
-    T.tag_configure('footer', font=('Times New Roman', 9))
-    T.tag_configure('footer_link', foreground="blue", font=('Times New Roman', 9, 'underline'))
-
     T.tag_bind('phrase_meaning_source_link', '<Button-1>', open_link)
-    T.tag_bind('footer_link', '<Button-1>', open_link)
 
     defs = rd["tuc"]
     sources = rd["authors"]
 
-    T.insert(END, "{}\n".format(selected_text), 'header')
-    T.insert(END, "Dictionary lookup results ({} to {})\n\n".format(SRC_LANG.upper(), DEST_LANG.upper()), 'header_cont')
+    T.insert(END, "{}\n".format(selected_text), 'main_header')
+    T.insert(END, "Dictionary lookup results ({} to {})\n".format(SRC_LANG.upper(), DEST_LANG.upper()), 'header_cont')
+    T.insert(END, "Lookup results from Glosbe. ", 'footer')
+    T.insert(END, "View detailed results online.", ('footer_link', this_glosbe_url))
+    T.insert(END, "\n\n")
 
     for d in defs:
-        print(d)
         try:
             phrase = d["phrase"]["text"]
         except KeyError:
-            phrase = "--"
+            phrase = "---"
 
         T.insert(END, "{}\n".format(phrase), 'phrase_main')
         try:
@@ -111,10 +118,5 @@ else:
             T.insert(END, "{} ".format(sources[str(a)]["N"]), ('phrase_meaning_source_link', sources[str(a)]["url"]))
         T.insert(END, "\n\n")
 
-    T.insert(END, "Lookup results from Glosbe. ", 'footer')
-    T.insert(END, "View online.", ('footer_link', this_glosbe_url))
-
-
-S.pack(side=RIGHT, fill=Y)
 T.pack(side=LEFT, fill=Y)
 mainloop()
