@@ -12,60 +12,80 @@ from tkinter import *
 
 
 def open_link(event):
+    """
+    Opens the link connected to the widget whose event has been called.
+    :param event: The click event.
+    """
     webbrowser.open(event.widget.tag_names(CURRENT)[1])
 
 
 def close(event):
+    """
+    Closes the window.
+    :param event: The (unused) click event.
+    """
     sys.exit(0)
 
 
+# define source and destination languages TODO: move these to options to a config file
 SRC_LANG = "auto"  # can use auto for auto-detect
 DEST_LANG = "en" # keep as default lang
 
+# some needed variables
 CHARS_PER_LINE = 75
 RESULT_IS_DICT_LOOKUP = False
 GTRANS_REAL_URL = "https://translate.google.com/#view=home&op=translate&sl={}&tl={}&text={}"
 GLOSBE_API_URL = "https://glosbe.com/gapi/translate?from={}&dest={}&phrase={}&format=json&pretty=false"
 GLOSBE_REAL_URL = "https://glosbe.com/{}/{}/{}"
 
+# get the last selected text via xsel TODO: Currently Linux only, expand.
 selected_text = subprocess.check_output(["xsel", "-o"]).decode().strip()
 
+# initialize the translator and try to determine the source language for a dictionary lookup
 translator = Translator()
 if SRC_LANG == "auto":
     SRC_LANG = translator.detect(selected_text).lang[:2]
 
+# convert the new source and defined destination languages into ISO-639-3 form
 try:
     ISO6393_src_lang = pycountry.languages.get(alpha_2=SRC_LANG).alpha_3
     ISO6393_dest_lang = pycountry.languages.get(alpha_2=DEST_LANG).alpha_3
-except AttributeError:
+except AttributeError:  # TODO: notify-send currently Linux only, expand.
     subprocess.call(['notify-send', "-i", "system-search", "Invalid source or destination language?",
                      "The desired source or destination language is invalid! [S: {}; D: {}]".format(SRC_LANG, DEST_LANG)])
     sys.exit(0)
 
+# build the needed urls
 this_glosbe_api_url = GLOSBE_API_URL.format(ISO6393_src_lang, ISO6393_dest_lang, selected_text)
 this_glosbe_url = GLOSBE_REAL_URL.format(SRC_LANG, DEST_LANG, selected_text)
 this_gt_url = GTRANS_REAL_URL.format(SRC_LANG, DEST_LANG, selected_text)
 
+# determine if a dictionary result is in order
+# only do this for source text that is sufficiently short
 if len(selected_text.split(" ")) < 5:
     rd = requests.get(this_glosbe_api_url).json()
     try:
-        if len(rd["tuc"]) != 0:
+        if len(rd["tuc"]) != 0: # if we do have results...
             RESULT_IS_DICT_LOOKUP = True
     except KeyError:
         pass  # keep RESULT_IS_DICT_LOOKUP as False
 
+# even if source lang == dest lang, Glosbe can still return a dictionary result, but a full translation makes no sense in this case
+# so if source lang == dest lang, but Glosbe did not return any results for this term, terminate here
 if SRC_LANG == DEST_LANG and not RESULT_IS_DICT_LOOKUP:
     subprocess.call(['notify-send', "-i", "system-search", "No dictionary lookup results and nothing to translate!",
                      "The source and destination languages are the same. [{}]".format(SRC_LANG)])
     sys.exit(0)
 
+# determine the resulting window height and (if needed) full translation
 if RESULT_IS_DICT_LOOKUP:
-    rd = requests.get(this_glosbe_api_url).json()
+    # rd = requests.get(this_glosbe_api_url).json()
     W_HEIGHT = 30
 else:
     translated_text = translator.translate(selected_text, src=SRC_LANG, dest=DEST_LANG).text
     W_HEIGHT = ceil(len(selected_text) / CHARS_PER_LINE) + ceil(len(translated_text) / CHARS_PER_LINE) + 12
 
+# build the window
 root = Tk()
 root.title('Translation Result' if not RESULT_IS_DICT_LOOKUP else "Lookup Result")
 root.bind('<Escape>', close)
@@ -73,13 +93,14 @@ S = Scrollbar(root)
 S.pack(side=RIGHT, fill=Y)
 T = Text(root, height=W_HEIGHT, width=CHARS_PER_LINE, wrap=WORD)
 
+# configure some common tags and bindings
 T.tag_configure('main_header', font=('Times New Roman', 14, 'bold'))
 T.tag_configure('footer', font=('Times New Roman', 9))
 T.tag_configure('footer_link', foreground="blue", font=('Times New Roman', 9, 'underline'))
 T.tag_bind('footer_link', '<Button-1>', open_link)
 T.tag_configure('header_cont', font=('Times New Roman', 12))
 
-if not RESULT_IS_DICT_LOOKUP:
+if not RESULT_IS_DICT_LOOKUP:   # if this is a full translation result...
     T.tag_configure('sect_header', font=('Times New Roman', 12, 'italic'))
     T.tag_configure('text', font=('Times New Roman', 12, 'bold'))
 
@@ -94,7 +115,7 @@ if not RESULT_IS_DICT_LOOKUP:
     T.insert(END, "Translation ({}):\n\n".format(DEST_LANG), 'sect_header')
     T.insert(END, "{}".format(translated_text), 'text')
 
-else:
+else:   # if this is a dictionary lookup result...
     T.tag_configure('phrase_main', font=('Times New Roman', 12, 'italic'))
     T.tag_configure('phrase_meaning', font=('Times New Roman', 11))
     T.tag_configure('phrase_meaning_source', font=('Times New Roman', 8))
@@ -113,7 +134,7 @@ else:
 
     for d in defs:
         try:
-            phrase = html.unescape(d["phrase"]["text"])
+            phrase = html.unescape(d["phrase"]["text"]) # some Glosbe results have HTML entities so unescape them
         except KeyError:
             phrase = "---"
 
