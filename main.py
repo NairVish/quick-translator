@@ -28,8 +28,13 @@ selected_text = subprocess.check_output(["xsel", "-o"]).decode().strip()
 translator = Translator()
 if SRC_LANG == "auto":
     SRC_LANG = translator.detect(selected_text).lang[:2]
-ISO6393_src_lang = pycountry.languages.get(alpha_2=SRC_LANG).alpha_3
-ISO6393_dest_lang = pycountry.languages.get(alpha_2=DEST_LANG).alpha_3
+
+try:
+    ISO6393_src_lang = pycountry.languages.get(alpha_2=SRC_LANG).alpha_3
+    ISO6393_dest_lang = pycountry.languages.get(alpha_2=DEST_LANG).alpha_3
+except AttributeError:
+    subprocess.call(['notify-send', "-i", "system-search", "Invalid source or destination language?",
+                     "The desired source or destination language is invalid! [S: {}; D: {}]".format(SRC_LANG, DEST_LANG)])
 
 if SRC_LANG == DEST_LANG:
     subprocess.call(['notify-send', "-i", "system-search", "Nothing to translate!", "The source and destination languages are the same! [{}]".format(SRC_LANG)])
