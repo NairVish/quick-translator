@@ -1,8 +1,10 @@
 import re
+import os
 import html
 import subprocess
 import requests
 import webbrowser
+import configparser
 
 from math import ceil
 
@@ -38,16 +40,43 @@ def close(event):
     sys.exit(0)
 
 
-# define source and destination languages TODO: move these to options to a config file
-SRC_LANG = "auto"  # can use auto for auto-detect
-DEST_LANG = "en" # keep as default lang
-
 # some needed variables
 CHARS_PER_LINE = 75
 RESULT_IS_DICT_LOOKUP = False
 GTRANS_REAL_URL = "https://translate.google.com/#view=home&op=translate&sl={}&tl={}&text={}"
 GLOSBE_API_URL = "https://glosbe.com/gapi/translate?from={}&dest={}&phrase={}&format=json&pretty=false"
 GLOSBE_REAL_URL = "https://glosbe.com/{}/{}/{}"
+
+CONFIG_FILE_PATH = os.path.expanduser("~/.quick-translator.ini")
+CONFIG_REWRITE_NEEDED = False
+
+# get config
+config = configparser.ConfigParser()
+config.read(CONFIG_FILE_PATH)
+try:
+    config['TRANSLATION_OPTIONS']
+except KeyError:
+    config['TRANSLATION_OPTIONS'] = {}
+    CONFIG_REWRITE_NEEDED = True
+opts = config['TRANSLATION_OPTIONS']
+
+if 'source_lang' not in opts:
+    config['TRANSLATION_OPTIONS']['source_lang'] = "auto"
+    CONFIG_REWRITE_NEEDED = True
+if 'destination_lang' not in opts:
+    config['TRANSLATION_OPTIONS']['destination_lang'] = "en"
+    CONFIG_REWRITE_NEEDED = True
+
+# define source and destination languages using the config file
+SRC_LANG = opts.get('source_lang', 'auto')
+DEST_LANG = opts.get('destination_lang', 'en')
+
+# save the config file if needed
+if CONFIG_REWRITE_NEEDED:
+    with open(CONFIG_FILE_PATH, 'w+') as configfile:
+        configfile.truncate(0)
+        configfile.seek(0)
+        config.write(configfile)
 
 # get the last selected text via xsel TODO: Currently Linux only, expand.
 selected_text = subprocess.check_output(["xsel", "-o"]).decode().strip()
@@ -62,8 +91,9 @@ try:
     ISO6393_src_lang = pycountry.languages.get(alpha_2=SRC_LANG).alpha_3
     ISO6393_dest_lang = pycountry.languages.get(alpha_2=DEST_LANG).alpha_3
 except AttributeError:  # TODO: notify-send currently Linux only, expand.
-    subprocess.call(['notify-send', "-i", "system-search", "Invalid source or destination language?",
-                     "The desired source or destination language is invalid! [S: {}; D: {}]".format(SRC_LANG, DEST_LANG)])
+    subprocess.call(['notify-send', "-i", "system-search", "Invalid source or destination language in config file?",
+                     "The defined source or destination language is invalid! [S: {}; D: {}, Config file: {}]"
+                     .format(SRC_LANG, DEST_LANG, CONFIG_FILE_PATH)])
     sys.exit(0)
 
 # build the needed urls
@@ -100,8 +130,10 @@ else:
 root = Tk()
 root.title('Translation Result' if not RESULT_IS_DICT_LOOKUP else "Lookup Result")
 root.bind('<Escape>', close)
+
 S = Scrollbar(root)
 S.pack(side=RIGHT, fill=Y)
+
 T = Text(root, height=W_HEIGHT, width=CHARS_PER_LINE, wrap=WORD)
 
 # configure some common tags and bindings
