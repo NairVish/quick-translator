@@ -40,6 +40,32 @@ def close(event):
     sys.exit(0)
 
 
+def get_currently_selected_or_copied_text():
+    from sys import platform
+    if platform.startswith("linux") or platform.startswith('freebsd'):
+        # linux
+        return subprocess.check_output(["xsel", "-o"]).decode().strip()
+    elif platform == "darwin":
+        # OS X
+        raise NotImplementedError("This program has not yet been implemented for MacOS.")
+    elif platform == "win32":
+        # Windows...
+        raise NotImplementedError("This program has not yet been implemented for Windows.")
+
+
+def post_notification(title, body):
+    from sys import platform
+    if platform.startswith("linux") or platform.startswith('freebsd'):
+        # linux
+        subprocess.call(['notify-send', "-i", "system-search", title, body])
+    elif platform == "darwin":
+        # OS X
+        raise NotImplementedError("This program has not yet been implemented for MacOS.")
+    elif platform == "win32":
+        # Windows...
+        raise NotImplementedError("This program has not yet been implemented for Windows.")
+
+
 # some needed variables
 CHARS_PER_LINE = 75
 RESULT_IS_DICT_LOOKUP = False
@@ -78,8 +104,8 @@ if CONFIG_REWRITE_NEEDED:
         configfile.seek(0)
         config.write(configfile)
 
-# get the last selected text via xsel TODO: Currently Linux only, expand.
-selected_text = subprocess.check_output(["xsel", "-o"]).decode().strip()
+# get the last selected text via xsel
+selected_text = get_currently_selected_or_copied_text()
 
 # initialize the translator and try to determine the source language for a dictionary lookup
 translator = Translator()
@@ -91,9 +117,9 @@ try:
     ISO6393_src_lang = pycountry.languages.get(alpha_2=SRC_LANG).alpha_3
     ISO6393_dest_lang = pycountry.languages.get(alpha_2=DEST_LANG).alpha_3
 except AttributeError:  # TODO: notify-send currently Linux only, expand.
-    subprocess.call(['notify-send', "-i", "system-search", "Invalid source or destination language in config file?",
-                     "The defined source or destination language is invalid! [S: {}; D: {}, Config file: {}]"
-                     .format(SRC_LANG, DEST_LANG, CONFIG_FILE_PATH)])
+    post_notification("Invalid source or destination language in config file?",
+                      "The defined source or destination language is invalid! [S: {}; D: {}, Config file: {}]"
+                      .format(SRC_LANG, DEST_LANG, CONFIG_FILE_PATH))
     sys.exit(0)
 
 # build the needed urls
@@ -114,8 +140,8 @@ if len(selected_text.split(" ")) < 5:
 # even if source lang == dest lang, Glosbe can still return a dictionary result, but a full translation makes no sense in this case
 # so if source lang == dest lang, but Glosbe did not return any results for this term, terminate here
 if SRC_LANG == DEST_LANG and not RESULT_IS_DICT_LOOKUP:
-    subprocess.call(['notify-send', "-i", "system-search", "No dictionary lookup results and nothing to translate!",
-                     "The source and destination languages are the same. [{}]".format(SRC_LANG)])
+    post_notification("No dictionary lookup results and nothing to translate!",
+                      "The source and destination languages are the same. [{}]".format(SRC_LANG))
     sys.exit(0)
 
 # determine the resulting window height and (if needed) full translation
