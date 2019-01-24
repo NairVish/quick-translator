@@ -55,14 +55,11 @@ def get_currently_selected_or_copied_text():
 
 def post_notification(title, body):
     from sys import platform
-    if platform.startswith("linux") or platform.startswith('freebsd'):
-        # linux
+    if platform.startswith("linux") or platform.startswith("freebsd"):  # Linux/FreeBSD
         subprocess.call(['notify-send', "-i", "system-search", title, body])
-    elif platform == "darwin":
-        # OS X
+    elif platform == "darwin":  # Darwin/MacOS
         raise NotImplementedError("This program has not yet been implemented for MacOS.")
-    elif platform == "win32":
-        # Windows...
+    elif platform == "win32":   # Windows
         raise NotImplementedError("This program has not yet been implemented for Windows.")
 
 
