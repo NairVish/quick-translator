@@ -5,8 +5,18 @@ from tkinter import *
 
 
 class ResultWindow(tk.Tk):
+    """
+    The window that shows the translation result.
+    """
 
     def __init__(self, window_height: int, chars_per_line: int, *args, **kwargs):
+        """
+        Initializes the window.
+        :param window_height: The desired height of the window in number of lines.
+        :param chars_per_line: The approximate number of characters per line.
+        :param args: Any extra arguments.
+        :param kwargs: Any extra keyword arguments
+        """
         tk.Tk.__init__(self, *args, **kwargs)
         self.chars_per_line = chars_per_line
 
@@ -18,7 +28,7 @@ class ResultWindow(tk.Tk):
 
         self.T = Text(self, height=window_height, width=chars_per_line, wrap=WORD)
 
-        # configure some common tags and bindings
+        # configure some needed tags and bindings
         self.T.tag_configure('main_header', font=('Times New Roman', 14, 'bold'))
         self.T.tag_configure('footer', font=('Times New Roman', 9))
         self.T.tag_configure('footer_link', foreground="blue", font=('Times New Roman', 9, 'underline'))
@@ -33,16 +43,32 @@ class ResultWindow(tk.Tk):
                             selected_text: str,
                             _trans_translated_text: str = "",
                             _dict_resultd: dict = None):
+        """
+        Initiates building of the result window.
+        :param result_is_dict_lookup: Whether or not these results are that of a dictionary lookup (or a full translation).
+        :param src_lang: The source language.
+        :param dest_lang: The destination language.
+        :param outbound_url: The outbound URL to be linked to (either Glosbe or Google Translate).
+        :param selected_text: The source text.
+        :param _trans_translated_text: The completely translated text (for full translations).
+        :param _dict_resultd: The dictionary results (for dictionary lookups).
+        """
         self.title('Translation Result' if not result_is_dict_lookup else "Lookup Result")
         if not result_is_dict_lookup:
-            self._build_trans_window(src_lang, dest_lang, outbound_url, selected_text, self.chars_per_line,
-                                     _trans_translated_text)
+            self._build_trans_window(src_lang, dest_lang, outbound_url, selected_text, _trans_translated_text)
         else:  # not result_is_dict_lookup
             self._build_dict_window(src_lang, dest_lang, outbound_url, selected_text, _dict_resultd)
         self.T.pack(side=LEFT, fill=Y)
 
-    def _build_trans_window(self, src_lang, dest_lang, this_gt_url, selected_text, chars_per_line, translated_text):
-        # SRC_LANG, DEST_LANG, this_gt_url, selected_text, CHARS_PER_LINE, translated_text
+    def _build_trans_window(self, src_lang, dest_lang, this_gt_url, selected_text, translated_text):
+        """
+        Builds the window for a full translation result.
+        :param src_lang: The source language.
+        :param dest_lang: The destination language.
+        :param this_gt_url: The outbound URL to Google Translate.
+        :param selected_text: The source text.
+        :param translated_text: The translated text.
+        """
         self.T.tag_configure('sect_header', font=('Times New Roman', 12, 'italic'))
         self.T.tag_configure('text', font=('Times New Roman', 12, 'bold'))
 
@@ -54,11 +80,19 @@ class ResultWindow(tk.Tk):
 
         self.T.insert(END, "Source ({}):\n\n".format(src_lang), 'sect_header')
         self.T.insert(END, "{}".format(selected_text), 'text')
-        self.T.insert(END, "\n\n{}\n\n".format('-' * chars_per_line))
+        self.T.insert(END, "\n\n{}\n\n".format('-' * self.chars_per_line))
         self.T.insert(END, "Translation ({}):\n\n".format(dest_lang), 'sect_header')
         self.T.insert(END, "{}".format(translated_text), 'text')
 
     def _build_dict_window(self, src_lang, dest_lang, this_glosbe_url, selected_text, rd):
+        """
+        Builds the window for a dictionary lookup result.
+        :param src_lang: The source language.
+        :param dest_lang: The destination language.
+        :param this_glosbe_url: The outbound URL to the full entry in Glosbe.
+        :param selected_text: The source text.
+        :param rd: The actual result data from the Glosbe API.
+        """
         # SRC_LANG, DEST_LANG, this_glosbe_url, selected_text, rd
         self.T.tag_configure('phrase_main', font=('Times New Roman', 12, 'italic'))
         self.T.tag_configure('phrase_meaning', font=('Times New Roman', 11))

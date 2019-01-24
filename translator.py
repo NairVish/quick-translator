@@ -1,8 +1,8 @@
 import os
-import sys
 import subprocess
 import configparser
 from math import ceil
+from sys import exit, platform
 
 import googletrans
 import pycountry
@@ -10,6 +10,9 @@ import requests
 
 
 class Translator:
+    """
+    The translator.
+    """
 
     # some needed variables
     CHARS_PER_LINE = 75
@@ -19,10 +22,16 @@ class Translator:
     CONFIG_FILE_PATH = os.path.expanduser("~/.quick-translator.ini")
 
     def __init__(self):
+        """
+        Initializes the Translator.
+        """
         self.RESULT_IS_DICT_LOOKUP = False
         self._process_config()
 
     def _process_config(self):
+        """
+        Processes an existing configuration OR creates a new one if one does not already exist.
+        """
         CONFIG_REWRITE_NEEDED = False
         # get config
         config = configparser.ConfigParser()
@@ -53,6 +62,9 @@ class Translator:
                 config.write(configfile)
 
     def translate(self):
+        """
+        Using the selected text, either translates or performs a lookup.
+        """
         # get the last selected text via xsel
         self.selected_text = self.get_currently_selected_or_copied_text()
 
@@ -69,7 +81,7 @@ class Translator:
             self.post_notification("Invalid source or destination language in config file?",
                               "The defined source or destination language is invalid! [S: {}; D: {}, Config file: {}]"
                               .format(self.src_lang, self.dest_lang, self.CONFIG_FILE_PATH))
-            sys.exit(1)
+            exit(1)
 
         # build the needed urls
         this_glosbe_api_url = self.GLOSBE_API_URL.format(ISO6393_src_lang, ISO6393_dest_lang, self.selected_text)
@@ -91,17 +103,19 @@ class Translator:
         if self.src_lang == self.dest_lang and not self.RESULT_IS_DICT_LOOKUP:
             self.post_notification("No dictionary lookup results and nothing to translate!",
                               "The source and destination languages are the same. [{}]".format(self.src_lang))
-            sys.exit(0)
+            exit(0)
 
         # determine the resulting window height and (if needed) full translation
         if self.RESULT_IS_DICT_LOOKUP:
-            # rd = requests.get(this_glosbe_api_url).json()
             self.W_HEIGHT = 30
         else:
             self.translated_text = translator.translate(self.selected_text, src=self.src_lang, dest=self.dest_lang).text
             self.W_HEIGHT = ceil(len(self.selected_text) / self.CHARS_PER_LINE) + ceil(len(self.translated_text) / self.CHARS_PER_LINE) + 12
 
     def expand_results_to_dict(self):
+        """
+        Expands the translation results to a dictionary.
+        """
         d = {
             'result_is_dict_lookup': self.RESULT_IS_DICT_LOOKUP,
             'src_lang': self.src_lang,
@@ -117,6 +131,9 @@ class Translator:
         return d
 
     def expand_size_to_dict(self):
+        """
+        Expands the desired window size to a dictionary.
+        """
         return {
             "window_height": self.W_HEIGHT,
             "chars_per_line": self.CHARS_PER_LINE
@@ -124,7 +141,11 @@ class Translator:
 
     @staticmethod
     def get_currently_selected_or_copied_text():
-        from sys import platform
+        """
+        Retrieves the currently selected or copied text depending on the system.
+        NOTE: This is currently only implemented for Linux-based systems.
+        :return: The currently selected or copied text.
+        """
         if platform.startswith("linux") or platform.startswith('freebsd'):  # Linux/FreeBSD
             return subprocess.check_output(["xsel", "-o"]).decode().strip()
         elif platform == "darwin":  # Darwin/MacOS
@@ -134,7 +155,12 @@ class Translator:
 
     @staticmethod
     def post_notification(title, body):
-        from sys import platform
+        """
+        Posts a notification.
+        NOTE: This is currently only implemented for Linux-based systems.
+        :param title: The title of the notification.
+        :param body: The body of the notification.
+        """
         if platform.startswith("linux") or platform.startswith("freebsd"):  # Linux/FreeBSD
             subprocess.call(['notify-send', "-i", "system-search", title, body])
         elif platform == "darwin":
