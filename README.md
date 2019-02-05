@@ -39,9 +39,9 @@ Though note that Glosbe may not necessarily support all of these languages, and 
 
 ## Usage/Installation
 
-To use this, you would need to install the requirements listed in `requirements.txt`, including tkinter (which would vary by distribution).
+To use this, you need to install the requirements listed in `requirements.txt`, including tkinter (which would vary by distribution).
 You could use [Pyinstaller](http://www.pyinstaller.org/) to generate an executable file that bundles all of the files, including dependencies together into one executable. (Remember to use the `--onefile` option!)
-Then, using built-in system utility or a third-party utility, this executable can then be bound to a keyboard shortcut.
+Then, using a built-in system utility or a third-party utility, this executable can then be bound to a keyboard shortcut.
 
 Once that's done, just select the text you want to translate and hit the shortcut you defined. You can hit the Escape button to quickly exit the window.
 
